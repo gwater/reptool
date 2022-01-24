@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" id="argent-fonts-css" href="https://fonts.googleapis.com/css?family=Cabin%3A500%2C700%2C500italic%2C700italic%7CAlegreya%3A400%2C700%2C400italic%2C700italic&amp;subset=latin%2Clatin-ext" type="text/css" media="all">
+    <style>
+    body {
+        font-family: "Cabin", Helvetica, sans-serif;
+        font-size: 18px;
+    }
+    form  { display: table;      }
+    form p     { display: table-row;  }
+    form label { display: table-cell; padding-right: 2em;}
+    form input { display: table-cell; }
+    .mdb {
+        display: inline-block;
+        padding: 0.3em;
+        background-color: rgba(0, 0, 90, 0.2);
+        width: auto;
+        margin-right:0.5em;
+        margin-bottom: 0.5em;
+    }
+    .content {
+        max-width: 65em;
+        margin-left: 0em;
+    }
+    </style>
+    <script>
+    function something(optional, deflt) {
+        return optional ? optional : deflt;
+    }
+    function compile_query(straße, hausnummer, plz, stadt) {
+        return straße + ' ' + hausnummer + ', ' + plz + ' ' + stadt;
+    }
+    function clear(mdb_list) {
+        while (mdb_list.firstChild) {
+            mdb_list.removeChild(mdb_list.firstChild);
+        }
+    }
+    function extract_properties(mdb_data) {
+        return [
+            mdb_data['mensch_name'],
+            mdb_data['partei_name'],
+            something(mdb_data['mensch_id_abgwatch'], '')
+        ];
+    }
+    function print_mdbs(mdbs_data, mdb_template, mdb_list) {
+        mdbs_data.forEach((mdb_data) => {
+            const [mdb_name, mdb_party, bundestag_id] =
+                extract_properties(mdb_data);
+            const mdb = mdb_template.content.cloneNode(true);
+            const name = mdb.querySelector('.name');
+            name.innerText = mdb_name;
+            const party = mdb.querySelector('.party');
+            party.innerText = mdb_party;
+            const contact_link = mdb.querySelector('.message');
+            contact_link.href += encodeURIComponent(bundestag_id);
+            mdb_list.appendChild(mdb);
+        });
+    }
+    function display_district(district_data, district) {
+        district.innerText = district_data['name'];
+        district.style.display = 'block';
+    }
+    function problem(reject, district, backup) {
+        console.log(reject);
+        district.innerText = 'Leider funktioniert unsere Suche gerade nicht.';
+        district.style.display = 'block';
+        backup.style.display = 'block';
+    }
+    </script>
+</head>
+<body>
+<div class="content">
+<form action="" method="post" id="findrep">
+    <p>
+        <label>Straße, Hausnummer</label>
+        <input type="text" name="straße">
+        <input type="text" name="hausnummer" size="5">
+    </p>
+    <p>
+        <label>PLZ, Stadt</label>
+        <input type="text" name="plz" size="5" maxlength="5">
+        <input type="text" name="stadt">
+    </p>
+    <p><button type="submit">Abgeordnete*n finden</button></p>
+</form>
+<h3 id="wahlkreis" style="display:none"></h3>
+<dl id="mdbs">
+    <template id="mdb_template">
+        <div class="mdb" itemscope itemtype="http://schema.org/Person">
+        <dt><span itemprop="name" class="name">Max Mustermann</span> (<span itemprop="affiliation" class="party">Partei</span>)</dt>
+        <dd>
+        <address>
+            <span itemprop="workLocation">℅ Deutscher Bundestag<br>
+                Platz der Republik 1<br>
+                11011 Berlin
+            </span><br>
+            <a class="message" href="https://www.abgeordnetenwatch.de/question-form/" target=_blank>Nachricht schreiben</a><br>
+            <!--a href="mailto:jim@rock.com">jim@rock.com</a><br-->
+        </address>
+        </dd>
+        </div>
+    </template>
+</dl>
+<p id="backup" style="display:none"><a href="https://www.bundestag.de/abgeordnete" target=_blank>Abgeordete*n auf bundestag.de finden.</a><p>
+</div>
+<script crossorigin="anonymous">
+const form  = document.getElementById('findrep');
+const mdb_template = document.getElementById('mdb_template');
+const mdb_list = document.getElementById('mdbs');
+const district = document.getElementById('wahlkreis');
+const base_url = 'https://nvkr.eu.pythonanywhere.com/loc2mdb/adresse/'
+const backup = document.getElementById('backup');
+
+form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    query = compile_query(
+        form.elements['straße'].value.replace(/,/g, ''),
+        form.elements['hausnummer'].value.replace(/,/g, ''),
+        form.elements['plz'].value.replace(/,/g, ''),
+        form.elements['stadt'].value.replace(/,/g, ''),
+        );
+    fetch_url = base_url + encodeURIComponent(query);
+    fetch(fetch_url)
+        .then((response) => {
+            return response.json();
+        }, reject => problem(reject, district, backup))
+        .then((data) => {
+            if (data.hasOwnProperty('error')) {
+                problem(data['error'], district, backup);
+                return undefined;
+            }
+            clear(mdb_list);
+            display_district(data['wahlkreis'], district);
+            print_mdbs(data['mdbs'], mdb_template, mdb_list);
+        }, reject => problem(reject, district, backup));
+});
+</script>
+</body>
+</html>
