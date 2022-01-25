@@ -48,6 +48,10 @@
         mdbs_data.forEach((mdb_data) => {
             const [mdb_name, mdb_party, x] =
                 extract_properties(mdb_data);
+            if (mdb_party == 'AfD') {
+                // nur Abgeordnete demokratischer Parteien
+                return undefined;
+            }
             const mdb = mdb_template.content.cloneNode(true);
             const name = mdb.querySelector('.name');
             name.innerText = mdb_name;
