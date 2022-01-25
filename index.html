@@ -79,13 +79,14 @@
         const lastname = names[names.length - 1];
         const firstname = firstnames.reduce((r, a) => r.concat(' ', a), '');
         const formatted_name = lastname + ',' + firstname;
+        const dr_formatted_name = lastname + ', Dr.' + firstname;
         for (const child of list.children) {
             const a = child.querySelector('a');
             console.log(child);
             if (formatted_name == a.title) {
                 return a.getAttribute('data-id');
             }
-            if ('Dr. '.concat(formatted_name) == a.title) {
+            if (dr_formatted_name == a.title) {
                 return a.getAttribute('data-id');
             }
             if (lastname == a.title.split(',')[0]) {
