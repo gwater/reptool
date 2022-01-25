@@ -67,7 +67,8 @@
         district.innerText = district_data['name'];
         district.style.display = 'block';
     }
-    function problem(reject, district, backup) {
+    function problem(reject, district, backup, context) {
+        console.log(context);
         console.log(reject);
         district.innerText = 'Leider funktioniert unsere Suche gerade nicht.';
         district.style.display = 'block';
@@ -8263,16 +8264,16 @@ form.addEventListener('submit', (event) => {
     fetch(fetch_url)
         .then((response) => {
             return response.json();
-        }, reject => problem(reject, district, backup))
+        }, reject => problem(reject, district, backup, 'API fetch failed'))
         .then((data) => {
             if (data.hasOwnProperty('error')) {
-                problem(data['error'], district, backup);
+                problem(data['error'], district, backup, 'API responded with error');
                 return undefined;
             }
             clear(mdb_list);
             display_district(data['wahlkreis'], district);
             print_mdbs(data['mdbs'], mdb_template, mdb_list, bundestag_list);
-        }, reject => problem(reject, district, backup));
+        }, reject => problem(reject, district, backup, 'API JSON problem'));
 });
 </script>
 </body>
