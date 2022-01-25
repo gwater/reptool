@@ -82,7 +82,6 @@
         const dr_formatted_name = lastname + ', Dr.' + firstname;
         for (const child of list.children) {
             const a = child.querySelector('a');
-            console.log(child);
             if (formatted_name == a.title) {
                 return a.getAttribute('data-id');
             }
